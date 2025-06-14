@@ -1,12 +1,89 @@
-import { Chess } from 'chess.js';
+import { Chess, Move, Square } from 'chess.js';
 
 class ChessEngine {
     private chess: Chess;
     private isRunning: boolean;
 
+    // Piece values
+    private static readonly PIECE_VALUES: { [key: string]: number } = {
+        'p': 1,  // pawn
+        'n': 3,  // knight
+        'b': 3,  // bishop
+        'r': 5,  // rook
+        'q': 9,  // queen
+        'k': 0   // king (not used in evaluation)
+    };
+
+    // Very high value to ensure checkmate is chosen over any material advantage
+    private static readonly CHECKMATE_VALUE = 10000;
+
     constructor() {
         this.chess = new Chess();
         this.isRunning = true;
+    }
+
+    private evaluatePosition(): number {
+        // Check for checkmate first
+        if (this.chess.isCheckmate()) {
+            // If it's checkmate, return a very high negative value if we're the one getting mated
+            // or a very high positive value if we're the one delivering mate
+            return this.chess.turn() === 'w' ? -ChessEngine.CHECKMATE_VALUE : ChessEngine.CHECKMATE_VALUE;
+        }
+
+        let score = 0;
+        const board = this.chess.board();
+        
+        for (let rank = 0; rank < 8; rank++) {
+            for (let file = 0; file < 8; file++) {
+                const piece = board[rank][file];
+                if (piece) {
+                    const value = ChessEngine.PIECE_VALUES[piece.type.toLowerCase()];
+                    score += piece.color === 'w' ? value : -value;
+                }
+            }
+        }
+        
+        return score;
+    }
+
+    private findBestMove(): string {
+        const currentMoves = this.chess.moves();
+        let bestScore = -Infinity;
+        let bestMove = currentMoves[0];
+
+        for (const move of currentMoves) {
+            // Make the move
+            this.chess.move(move);
+            
+            // Check if this move leads to checkmate
+            if (this.chess.isCheckmate()) {
+                this.chess.undo();
+                return move; // Immediately return the checkmate move
+            }
+            
+            // Get opponent's best response
+            const opponentMoves = this.chess.moves();
+            let opponentBestScore = -Infinity;
+            
+            for (const opponentMove of opponentMoves) {
+                this.chess.move(opponentMove);
+                const score = -this.evaluatePosition(); // Negative because we're evaluating from opponent's perspective
+                this.chess.undo();
+                
+                opponentBestScore = Math.max(opponentBestScore, score);
+            }
+            
+            // Undo our move
+            this.chess.undo();
+            
+            // If this move leads to a better position after opponent's best response, choose it
+            if (-opponentBestScore > bestScore) {
+                bestScore = -opponentBestScore;
+                bestMove = move;
+            }
+        }
+
+        return bestMove;
     }
 
     private handleCommand(command: string): void {
@@ -48,13 +125,9 @@ class ChessEngine {
                 break;
 
             case 'go':
-                // For now, we'll just make a random move
-                const moves = this.chess.moves();
-                if (moves.length > 0) {
-                    const randomMove = moves[Math.floor(Math.random() * moves.length)];
-                    this.chess.move(randomMove);
-                    console.log(`bestmove ${randomMove}`);
-                }
+                const bestMove = this.findBestMove();
+                this.chess.move(bestMove);
+                console.log(`bestmove ${bestMove}`);
                 break;
 
             case 'quit':
