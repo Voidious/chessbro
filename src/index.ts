@@ -46,6 +46,35 @@ class ChessEngine {
         return score;
     }
 
+    private minimax(depth: number, isMaximizing: boolean): number {
+        // Base case: if we've reached maximum depth or the game is over
+        if (depth === 0 || this.chess.isGameOver()) {
+            return this.evaluatePosition();
+        }
+
+        const moves = this.chess.moves();
+        
+        if (isMaximizing) {
+            let maxScore = -Infinity;
+            for (const move of moves) {
+                this.chess.move(move);
+                const score = this.minimax(depth - 1, false);
+                this.chess.undo();
+                maxScore = Math.max(maxScore, score);
+            }
+            return maxScore;
+        } else {
+            let minScore = Infinity;
+            for (const move of moves) {
+                this.chess.move(move);
+                const score = this.minimax(depth - 1, true);
+                this.chess.undo();
+                minScore = Math.min(minScore, score);
+            }
+            return minScore;
+        }
+    }
+
     private findBestMove(): string {
         const currentMoves = this.chess.moves();
         let bestScore = -Infinity;
@@ -61,24 +90,15 @@ class ChessEngine {
                 return move; // Immediately return the checkmate move
             }
             
-            // Get opponent's best response
-            const opponentMoves = this.chess.moves();
-            let opponentBestScore = -Infinity;
-            
-            for (const opponentMove of opponentMoves) {
-                this.chess.move(opponentMove);
-                const score = -this.evaluatePosition(); // Negative because we're evaluating from opponent's perspective
-                this.chess.undo();
-                
-                opponentBestScore = Math.max(opponentBestScore, score);
-            }
+            // Evaluate the position after 2 plies (our move + opponent's best response + our best response)
+            const score = this.minimax(2, false);
             
             // Undo our move
             this.chess.undo();
             
-            // If this move leads to a better position after opponent's best response, choose it
-            if (-opponentBestScore > bestScore) {
-                bestScore = -opponentBestScore;
+            // If this move leads to a better position, choose it
+            if (score > bestScore) {
+                bestScore = score;
                 bestMove = move;
             }
         }
