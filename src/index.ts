@@ -1,8 +1,14 @@
 import { Chess, Move, Square } from 'chess.js';
 
+interface TranspositionEntry {
+    depth: number;
+    score: number;
+}
+
 class ChessEngine {
     private chess: Chess;
     private isRunning: boolean;
+    private transpositionTable: Map<string, TranspositionEntry>;
 
     // Piece values
     private static readonly PIECE_VALUES: { [key: string]: number } = {
@@ -20,6 +26,7 @@ class ChessEngine {
     constructor() {
         this.chess = new Chess();
         this.isRunning = true;
+        this.transpositionTable = new Map();
     }
 
     private evaluatePosition(): number {
@@ -47,9 +54,19 @@ class ChessEngine {
     }
 
     private minimax(depth: number, isMaximizing: boolean): number {
+        // Check transposition table first
+        const fen = this.chess.fen();
+        const cachedEntry = this.transpositionTable.get(fen);
+        if (cachedEntry && cachedEntry.depth >= depth) {
+            return cachedEntry.score;
+        }
+
         // Base case: if we've reached maximum depth or the game is over
         if (depth === 0 || this.chess.isGameOver()) {
-            return this.evaluatePosition();
+            const score = this.evaluatePosition();
+            // Cache the evaluation
+            this.transpositionTable.set(fen, { depth, score });
+            return score;
         }
 
         const moves = this.chess.moves();
@@ -62,6 +79,8 @@ class ChessEngine {
                 this.chess.undo();
                 maxScore = Math.max(maxScore, score);
             }
+            // Cache the result
+            this.transpositionTable.set(fen, { depth, score: maxScore });
             return maxScore;
         } else {
             let minScore = Infinity;
@@ -71,11 +90,16 @@ class ChessEngine {
                 this.chess.undo();
                 minScore = Math.min(minScore, score);
             }
+            // Cache the result
+            this.transpositionTable.set(fen, { depth, score: minScore });
             return minScore;
         }
     }
 
     private findBestMove(): string {
+        // Clear transposition table for new search
+        this.transpositionTable.clear();
+        
         const currentMoves = this.chess.moves();
         let bestScore = -Infinity;
         let bestMove = currentMoves[0];
@@ -123,6 +147,7 @@ class ChessEngine {
 
             case 'ucinewgame':
                 this.chess = new Chess();
+                this.transpositionTable.clear(); // Clear cache for new game
                 break;
 
             case 'position':
