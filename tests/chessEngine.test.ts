@@ -162,7 +162,7 @@ describe('ChessEngine', () => {
   describe('start', () => {
     it('registers stdin input handler', () => {
       const engine = new ChessEngine();
-      const stdin = {
+      const stdin: NodeJS.ReadStream = {
         setEncoding: jest.fn(),
         on: jest.fn(),
       };
