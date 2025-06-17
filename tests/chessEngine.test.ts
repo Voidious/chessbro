@@ -105,7 +105,7 @@ describe('ChessEngine', () => {
 
     it('handles position command with startpos', () => {
       const engine = new ChessEngine();
-      engine.handle,handleCommand('position startpos moves e2e4 d2d4');
+      engine.handleCommand('position startpos moves e2e4 d2d4');
       expect(engine.chess.move).toHaveBeenCalledWith('e2e4');
       expect(engine.chess.move).toHaveBeenCalledWith('d2d4');
     });
