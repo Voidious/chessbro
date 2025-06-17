@@ -26,7 +26,7 @@ describe('ChessEngine', () => {
 
     it('returns material score for a normal position', () => {
       const chess = new Chess();
-      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
+      chess.load('rnbqkbnr/pppppppp/8/8/3/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
 
       engine.chess = chess;
 
@@ -127,10 +127,17 @@ describe('ChessEngine', () => {
 
   describe('start', () => {
     it('registers stdin input handler', () => {
-      const engine = new ChessEngine();
       const stdin: NodeJS.ReadStream = {
         setEncoding: jest.fn(),
         on: jest.fn(),
+        isRaw: false,
+        setRawMode: jest.fn(),
+        isTTY: false,
+        destroySoon: jest.fn(),
+        fd: 0,
+        path: '',
+        bytesRead: 0,
+        // Add more properties as needed to satisfy the interface
       };
       jest.spyOn(process, 'stdin').mockReturnValue(stdin);
       engine.start();
