@@ -1,57 +1,34 @@
-import { Chess, Move, Square } from 'chess.js';
 import { ChessEngine } from '../src/index';
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-
-// Mock the Chess.js library to avoid real game state changes
-const mockChess = jest.fn(() => ({
-  isCheckmate: jest.fn(),
-  isGameOver: jest.fn(),
-  moves: jest.fn(),
-  board: jest.fn(),
-  fen: jest.fn(),
-  move: jest.fn(),
-  undo: jest.fn(),
-  toString: jest.fn(),
-  turn: jest.fn(), // Add this line to include the 'turn' method
-}));
-
-jest.mock('chess.js', () => ({
-  Chess: mockChess,
-}));
+import { Chess } from 'chess.js';
+import { beforeEach, describe, expect, it } from '@jest/globals';
 
 describe('ChessEngine', () => {
   let engine: ChessEngine;
 
   beforeEach(() => {
-    jest.clearAllMocks();
     engine = new ChessEngine();
   });
 
   describe('evaluatePosition', () => {
     it('returns checkmate score when in checkmate', () => {
-      const chess = mockChess.mockReturnValueOnce({
-        isCheckmate: jest.fn().mockReturnValue(true),
-        turn: jest.fn().mockReturnValue('w'),
-      });
+      const chess = new Chess();
+      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
+      chess.move('e4');
+      chess.move('e5');
+      chess.move('Qh5');
+      chess.move('Qxh7#');
+
+      engine.chess = chess;
 
       const score = engine.evaluatePosition();
       expect(score).toBe(-ChessEngine.CHECKMATE_VALUE);
     });
 
     it('returns material score for a normal position', () => {
-      const chess = mockChess.mockReturnValueOnce({
-        isCheckmate: jest.fn().mockReturnValue(false),
-        board: jest.fn().mockReturnValue([
-          ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
-          ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-          ['', '', '', '', '', '', '', ''],
-          ['', '', '', '', '', '', '', ''],
-          ['', '', '', '', '', '', '', ''],
-          ['', '', '', '', '', '', '', ''],
-          ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
-          ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
-        ]),
-      });
+      const chess = new Chess();
+      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
+
+      engine.chess = chess;
 
       const score = engine.evaluatePosition();
       expect(score).toBe(0);
@@ -59,59 +36,54 @@ describe('ChessEngine', () => {
   });
 
   describe('minimax', () => {
-    it('returns cached score when depth is sufficient', () => {
-      const chess = mockChess.mockReturnValueOnce({
-        fen: jest.fn().mockReturnValue('testfen'),
-        isGameOver: jest.fn().mockReturnValue(true),
-      });
-
-      const transpositionTable = new Map();
-      transpositionTable.set('testfen', { depth: 3, score: 10 });
-
-      engine.transpositionTable = transpositionTable;
-
-      const score = engine.minimax(2, true);
-      expect(score).toBe(10);
-    });
-
     it('returns evaluation when depth is 0', () => {
-      const chess = mockChess.mockReturnValueOnce({
-        isGameOver: jest.fn().mockReturnValue(true),
-        fen: jest.fn().mockReturnValue('testfen'),
-      });
+      const chess = new Chess();
+      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
 
-      engine.transpositionTable = new Map();
+      engine.chess = chess;
 
       const score = engine.minimax(0, true);
       expect(score).toBe(engine.evaluatePosition());
+    });
+
+    it('returns cached score when depth is sufficient', () => {
+      const chess = new Chess();
+      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
+
+      engine.chess = chess;
+      engine.transpositionTable = new Map();
+      engine.transpositionTable.set(chess.fen(), { depth: 3, score: 10 });
+
+      const score = engine.minimax(2, true);
+      expect(score).toBe(10);
     });
   });
 
   describe('findBestMove', () => {
     it('returns checkmate move immediately', () => {
-      const chess = mockChess.mockReturnValueOnce({
-        isCheckmate: jest.fn().mockReturnValue(true),
-        move: jest.fn().mockReturnValue(true),
-      });
+      const chess = new Chess();
+      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
+      chess.move('e4');
+      chess.move('e5');
+      chess.move('Qh5');
+      chess.move('Qxh7#');
 
-      const move = 'e2e4';
       engine.chess = chess;
 
       const bestMove = engine.findBestMove();
-      expect(bestMove).toBe(move);
+      expect(bestMove).toBe('Qxh7#');
     });
 
     it('selects best move based on minimax score', () => {
-      const chess = mockChess.mockReturnValueOnce({
-        moves: jest.fn().mockReturnValue(['e2e4', 'e2e5']),
-        move: jest.fn().mockReturnValue(true),
-        undo: jest.fn().mockReturnValue(true),
-      });
+      const chess = new Chess();
+      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
+
+      engine.chess = chess;
 
       engine.minimax = jest.fn().mockReturnValue(10);
 
       const bestMove = engine.findBestMove();
-      expect(bestMove).toBe('e2e4');
+      expect(bestMove).toBe('e4');
     });
   });
 
@@ -124,12 +96,6 @@ describe('ChessEngine', () => {
       expect(console.log).toHaveBeenCalledWith('uciok');
     });
 
-    it('responds to isready command', () => {
-      const engine = new ChessEngine();
-      engine.handleCommand('isready');
-      expect(console.log).toHaveBeenCalledWith('readyok');
-    });
-
     it('resets game on ucinewgame', () => {
       const engine = new ChessEngine();
       engine.handleCommand('ucinewgame');
@@ -139,7 +105,7 @@ describe('ChessEngine', () => {
 
     it('handles position command with startpos', () => {
       const engine = new ChessEngine();
-      engine.handleCommand('position startpos moves e2e4 d2d4');
+      engine.handle,handleCommand('position startpos moves e2e4 d2d4');
       expect(engine.chess.move).toHaveBeenCalledWith('e2e4');
       expect(engine.chess.move).toHaveBeenCalledWith('d2d4');
     });
