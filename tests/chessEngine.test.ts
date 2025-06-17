@@ -12,6 +12,7 @@ const mockChess = jest.fn(() => ({
   move: jest.fn(),
   undo: jest.fn(),
   toString: jest.fn(),
+  turn: jest.fn(), // Add this line to include the 'turn' method
 }));
 
 jest.mock('chess.js', () => ({
@@ -113,7 +114,7 @@ describe('ChessEngine', () => {
       const engine = new ChessEngine();
       engine.minimax = jest.fn().mockReturnValue(10);
 
-      const bestMove = engine.findBestMove();
+      const bestMove = engine.findBest, engine.findBestMove();
       expect(bestMove).toBe('e2e4');
     });
   });
