@@ -29,7 +29,7 @@ export class ChessEngine {
         this.transpositionTable = new Map();
     }
 
-    private evaluatePosition(): number {
+    public evaluatePosition(): number {
         // Check for checkmate first
         if (this.chess.isCheckmate()) {
             // If it's checkmate, return a very high negative value if we're the one getting mated
@@ -53,7 +53,7 @@ export class ChessEngine {
         return score;
     }
 
-    private minimax(depth: number, isMaximizing: boolean): number {
+    public minimax(depth: number, isMaximizing: boolean): number {
         // Check transposition table first
         const fen = this.chess.fen();
         const cachedEntry = this.transpositionTable.get(fen);
@@ -96,7 +96,7 @@ export class ChessEngine {
         }
     }
 
-    private findBestMove(): string {
+    public findBestMove(): string {
         // Clear transposition table for new search
         this.transpositionTable.clear();
         
@@ -130,7 +130,7 @@ export class ChessEngine {
         return bestMove;
     }
 
-    private handleCommand(command: string): void {
+    public handleCommand(command: string): void {
         const parts = command.trim().split(' ');
         const mainCommand = parts[0].toLowerCase();
 
@@ -195,4 +195,4 @@ export class ChessEngine {
 }
 
 const engine = new ChessEngine();
-engine.start(); 
+engine.start();

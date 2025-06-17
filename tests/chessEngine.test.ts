@@ -138,7 +138,7 @@ describe('ChessEngine', () => {
       const engine = new ChessEngine();
       engine.handleCommand('ucinewgame');
       expect(engine.chess).toBeInstanceOf(Chess);
-      expect(engine.transpositionTable).toBeEmpty();
+      expect(engine.transpositionTable.size).toBe(0);
     });
 
     it('handles position command with startpos', () => {
