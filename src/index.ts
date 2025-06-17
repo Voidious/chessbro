@@ -5,7 +5,7 @@ interface TranspositionEntry {
     score: number;
 }
 
-class ChessEngine {
+export class ChessEngine {
     private chess: Chess;
     private isRunning: boolean;
     private transpositionTable: Map<string, TranspositionEntry>;

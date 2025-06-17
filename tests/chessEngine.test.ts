@@ -114,7 +114,7 @@ describe('ChessEngine', () => {
       const engine = new ChessEngine();
       engine.minimax = jest.fn().mockReturnValue(10);
 
-      const bestMove = engine.findBest, engine.findBestMove();
+      const bestMove = engine.findBestMove();
       expect(bestMove).toBe('e2e4');
     });
   });
