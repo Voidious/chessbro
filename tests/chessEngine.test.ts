@@ -26,7 +26,7 @@ describe('ChessEngine', () => {
 
     it('returns material score for a normal position', () => {
       const chess = new Chess();
-      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
+      chess.load('rnbqkbnr/pppppppp/8/8/3/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
 
       engine.chess = chess;
 
