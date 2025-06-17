@@ -68,7 +68,6 @@ describe('ChessEngine', () => {
       const transpositionTable = new Map();
       transpositionTable.set('testfen', { depth: 3, score: 10 });
 
-      const engine = new ChessEngine();
       engine.transpositionTable = transpositionTable;
 
       const score = engine.minimax(2, true);
@@ -81,7 +80,6 @@ describe('ChessEngine', () => {
         fen: jest.fn().mockReturnValue('testfen'),
       });
 
-      const engine = new ChessEngine();
       engine.transpositionTable = new Map();
 
       const score = engine.minimax(0, true);
@@ -97,7 +95,6 @@ describe('ChessEngine', () => {
       });
 
       const move = 'e2e4';
-      const engine = new ChessEngine();
       engine.chess = chess;
 
       const bestMove = engine.findBestMove();
@@ -111,7 +108,6 @@ describe('ChessEngine', () => {
         undo: jest.fn().mockReturnValue(true),
       });
 
-      const engine = new ChessEngine();
       engine.minimax = jest.fn().mockReturnValue(10);
 
       const bestMove = engine.findBestMove();
@@ -137,7 +133,7 @@ describe('ChessEngine', () => {
     it('resets game on ucinewgame', () => {
       const engine = new ChessEngine();
       engine.handleCommand('ucinewgame');
-      expect(engine.chess).toBeInstanceOf(Chess);
+      expect(engine.chess.isGameOver()).toBe(false);
       expect(engine.transpositionTable.size).toBe(0);
     });
 
@@ -151,7 +147,7 @@ describe('ChessEngine', () => {
     it('handles position command with fen', () => {
       const engine = new ChessEngine();
       engine.handleCommand('position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 moves e2e4');
-      expect(engine.chess.fen).toHaveBeenCalledWith('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+      expect(engine.chess.fen()).toBe('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
       expect(engine.chess.move).toHaveBeenCalledWith('e2e4');
     });
 

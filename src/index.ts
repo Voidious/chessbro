@@ -6,12 +6,12 @@ interface TranspositionEntry {
 }
 
 export class ChessEngine {
-    private chess: Chess;
-    private isRunning: boolean;
-    private transpositionTable: Map<string, TranspositionEntry>;
+    public chess: Chess;
+    public isRunning: boolean;
+    public transpositionTable: Map<string, TranspositionEntry>;
 
     // Piece values
-    private static readonly PIECE_VALUES: { [key: string]: number } = {
+    public static readonly PIECE_VALUES: { [key: string]: number } = {
         'p': 1,  // pawn
         'n': 3,  // knight
         'b': 3,  // bishop
@@ -21,7 +21,7 @@ export class ChessEngine {
     };
 
     // Very high value to ensure checkmate is chosen over any material advantage
-    private static readonly CHECKMATE_VALUE = 10000;
+    public static readonly CHECKMATE_VALUE = 10000;
 
     constructor() {
         this.chess = new Chess();
