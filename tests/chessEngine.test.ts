@@ -134,6 +134,10 @@ describe('ChessEngine', () => {
         setRawMode: jest.fn(),
         isTTY: false,
         destroySoon: jest.fn(),
+        write: jest.fn(),
+        connect: jest.fn(),
+        pause: jest.fn(),
+        resetAndDestroy: jest.fn(),
         // Remove invalid 'fd' property
       };
       jest.spyOn(process, 'stdin').mockReturnValue(stdin);
