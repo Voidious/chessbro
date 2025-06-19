@@ -140,21 +140,7 @@ describe('ChessEngine', () => {
         resetAndDestroy: jest.fn(),
         // Remove invalid 'fd' property
       };
-      const mockStdin = {
-        fd: 0,
-        on: jest.fn(),
-        once: jest.fn(),
-        off: jest.fn(),
-        emit: jest.fn()
-      };
-      
-      // Handle any existing listeners
-      const listeners = stdin.listeners('data');
-      listeners.forEach(listener => {
-        mockStdin.on.mock.addListener(listener);
-      });
-      
-      jest.spyOn(process, 'stdin').mockReturnValue(mockStdin);
+      jest.spyOn(process, 'stdin').mockReturnValue(stdin);
       engine.start();
       expect(process.stdin.setEncoding).toHaveBeenCalledWith('utf8');
       expect(stdin.on).toHaveBeenCalledWith('data', expect.any(Function));
