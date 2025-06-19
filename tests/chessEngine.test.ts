@@ -138,7 +138,7 @@ describe('ChessEngine', () => {
         connect: jest.fn(),
         pause: jest.fn(),
         resetAndDestroy: jest.fn(),
-        fd: 0, // Add required 'fd' property
+        // Remove invalid 'fd' property
       };
       jest.spyOn(process, 'stdin').mockReturnValue(stdin);
       engine.start();
