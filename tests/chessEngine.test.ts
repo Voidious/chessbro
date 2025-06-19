@@ -1,4 +1,5 @@
 import { ChessEngine } from '../src/index';
+import { Readable, createMockedReadStream } from 'stream';
 import { Chess } from 'chess.js';
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
@@ -140,7 +141,10 @@ describe('ChessEngine', () => {
         resetAndDestroy: jest.fn(),
         // Remove invalid 'fd' property
       };
-      jest.spyOn(process, 'stdin').mockReturnValue(stdin);
+      const mockStdin = jest.createMockedReadStream(['test input']);
+      jest.mock('process', () => ({
+          stdin: mockStdin
+      }));
       engine.start();
       expect(process.stdin.setEncoding).toHaveBeenCalledWith('utf8');
       expect(stdin.on).toHaveBeenCalledWith('data', expect.any(Function));
