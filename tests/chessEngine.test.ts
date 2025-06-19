@@ -1,5 +1,5 @@
 import { ChessEngine } from '../src/index';
-import { Readable, createMockedReadStream } from 'stream';
+import { Readable } from 'stream';
 import { Chess } from 'chess.js';
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
@@ -141,7 +141,8 @@ describe('ChessEngine', () => {
         resetAndDestroy: jest.fn(),
         // Remove invalid 'fd' property
       };
-      const mockStdin = jest.createMockedReadStream(['test input']);
+      const { Readable } = require('stream');
+      const mockStdin = Readable.from(['test input']);
       jest.mock('process', () => ({
           stdin: mockStdin
       }));
