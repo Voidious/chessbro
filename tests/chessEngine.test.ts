@@ -140,7 +140,11 @@ describe('ChessEngine', () => {
         resetAndDestroy: jest.fn(),
         // Remove invalid 'fd' property
       };
-      jest.spyOn(process, 'stdin').mockReturnValue(stdin);
+      jest.mock('process');
+      const mockStdin = jest.createMockedFunction<NodeJS.ReadStream>((() => ({
+        read: jest.fn(),
+        on: jest.fn(),
+      })) as NodeJS.ReadStream);
       engine.start();
       expect(process.stdin.setEncoding).toHaveBeenCalledWith('utf8');
       expect(stdin.on).toHaveBeenCalledWith('data', expect.any(Function));
