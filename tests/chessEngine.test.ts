@@ -137,21 +137,7 @@ describe('ChessEngine', () => {
         write: jest.fn(),
         connect: jest.fn(),
         pause: jest.fn(),
-        resume: jest.fn(),
         resetAndDestroy: jest.fn(),
-        setTimeout: jest.fn(),
-        setNoDelay: jest.fn(),
-        setKeepAlive: jest.fn(),
-        onData: jest.fn(),
-        onEnd: jest.fn(),
-        emit: jest.emitMockEvent('data', []),
-        eventNames: jest.fn(),
-        listeners: jest.fn(),
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        removeAllListeners: jest.fn(),
-        listenerCount: jest.fn(),
-      };
         // Remove invalid 'fd' property
       };
       jest.spyOn(process, 'stdin').mockReturnValue(stdin);
