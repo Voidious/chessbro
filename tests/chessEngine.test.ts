@@ -129,16 +129,44 @@ describe('ChessEngine', () => {
   describe('start', () => {
     it('registers stdin input handler', () => {
       const stdin: NodeJS.ReadStream = {
-        setEncoding: jest.fn(),
-        on: jest.fn(),
-        isRaw: false,
-        setRawMode: jest.fn(),
-        isTTY: false,
-        destroySoon: jest.fn(),
-        write: jest.fn(),
-        connect: jest.fn(),
-        pause: jest.fn(),
-        resetAndDestroy: jest.fn(),
+          setEncoding: jest.fn(),
+          on: jest.fn(),
+          isRaw: false,
+          setRawMode: jest.fn(),
+          isTTY: false,
+          destroySoon: jest.fn(),
+          write: jest.fn(),
+          connect: jest.fn(),
+          pause: jest.fn(),
+          resetAndDestroy: jest.fn(),
+          resume: jest.fn(), // Added property
+          setTimeout: jest.fn(), // Added property
+          setNoDelay: jest.fn(), // Added property
+          setKeepAlive: jest.fn(), // Added property
+          address: '', // Add this line to include the 'address' property
+          unref: jest.fn(), // Add this line to include the 'unref' property
+          ref: jest.fn(), // Add this line to include the 'ref' property
+          autoSelectFamilyAttemptedAddresses: [], // Correct type for this property
+          resume: jest.fn(), // Added property
+          setTimeout: jest.fn(), // Added property
+          setNoDelay: jest.fn(), // Added property
+          setKeepAlive: jest.fn(), // Added property
+          address: '', // Add this line to include the 'address' property
+          unref: jest.fn(), // Add this line to include the 'unref' property
+          ref: jest.fn(), // Add this line to include the 'ref' property
+          autoSelectFamilyAttemptedAddresses: [], // Correct type for this property
+          resume: jest.fn(), // Added property
+          setTimeout: jest.fn(), // Added property
+          setNoDelay: jest.fn(), // Added property
+          setKeepAlive: jest.fn(), // Added property
+          address: '', // Add this line to include the 'address' property
+          unref: jest.fn(), // Add this line to include the 'unref' property
+          ref: jest.fn(), // Add this line to include the 'ref' property
+          autoSelectFamilyAttemptedAddresses: jest.fn(), // Add this line to include the 'autoSelectFamilyAttemptedAddresses' property
+          resume: jest.fn(), // Added property
+          setTimeout: jest.fn(), // Added property
+          setNoDelay: jest.fn(), // Added property
+          setKeepAlive: jest.fn(), // Added property
         // Remove invalid 'fd' property
       };
       const { Readable } = require('stream');
