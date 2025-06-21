@@ -1,0 +1,6 @@
+.aider**
+.cursor**
+.kilocode**
+.vscode**
+node_modules
+dist
