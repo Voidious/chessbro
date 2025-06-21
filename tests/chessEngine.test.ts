@@ -131,6 +131,90 @@ describe('ChessEngine', () => {
             expect(bestMove).toBe('Qh5#');
         });
     });
+
+    describe('handleCommand', () => {
+        let logSpy: jest.SpyInstance;
+
+        beforeEach(() => {
+            logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+        });
+
+        afterEach(() => {
+            logSpy.mockRestore();
+        });
+
+        it('should handle "uci" command', () => {
+            engine.handleCommand('uci');
+            expect(logSpy).toHaveBeenCalledWith('id name ChessBro');
+            expect(logSpy).toHaveBeenCalledWith('id author Your Name');
+            expect(logSpy).toHaveBeenCalledWith('uciok');
+        });
+
+        it('should handle "isready" command', () => {
+            engine.handleCommand('isready');
+            expect(logSpy).toHaveBeenCalledWith('readyok');
+        });
+
+        it('should handle "ucinewgame" command', () => {
+            const clearSpy = jest.spyOn(engine.transpositionTable, 'clear');
+            engine.handleCommand('ucinewgame');
+            expect(mockedChess).toHaveBeenCalled();
+            expect(clearSpy).toHaveBeenCalled();
+            clearSpy.mockRestore();
+        });
+
+        it('should handle "position startpos" command', () => {
+            engine.handleCommand('position startpos');
+            expect(mockedChess).toHaveBeenCalledWith();
+        });
+
+        it('should handle "position startpos moves" command', () => {
+            const moveSpy = jest.fn();
+            mockedChess.prototype.move = moveSpy;
+            engine.chess = new Chess();
+            engine.handleCommand('position startpos moves e2e4 e7e5');
+            expect(moveSpy).toHaveBeenCalledWith('e2e4');
+            expect(moveSpy).toHaveBeenCalledWith('e7e5');
+        });
+
+        it('should handle "position fen" command', () => {
+            const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+            engine.handleCommand(`position fen ${fen}`);
+            expect(mockedChess).toHaveBeenCalledWith(fen);
+        });
+        
+        it('should handle "position fen moves" command', () => {
+            const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+            const moveSpy = jest.fn();
+            mockedChess.prototype.move = moveSpy;
+            engine.chess = new Chess();
+            engine.handleCommand(`position fen ${fen} moves e2e4 e7e5`);
+            expect(mockedChess).toHaveBeenCalledWith(fen);
+            expect(moveSpy).toHaveBeenCalledWith('e2e4');
+            expect(moveSpy).toHaveBeenCalledWith('e7e5');
+        });
+
+        it('should handle "go" command', () => {
+            const bestMove = 'e4';
+            const findBestMoveSpy = jest.spyOn(engine, 'findBestMove').mockReturnValue(bestMove);
+            const moveSpy = jest.fn();
+            mockedChess.prototype.move = moveSpy;
+            engine.chess = new Chess();
+
+            engine.handleCommand('go');
+            
+            expect(findBestMoveSpy).toHaveBeenCalled();
+            expect(moveSpy).toHaveBeenCalledWith(bestMove);
+            expect(logSpy).toHaveBeenCalledWith(`bestmove ${bestMove}`);
+            
+            findBestMoveSpy.mockRestore();
+        });
+
+        it('should handle "quit" command', () => {
+            engine.handleCommand('quit');
+            expect(engine.isRunning).toBe(false);
+        });
+    });
 });
 
 // Helper to create a full 8x8 board from a sparse one for testing
