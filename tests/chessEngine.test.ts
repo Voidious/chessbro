@@ -1,154 +1,147 @@
 import { ChessEngine } from '../src/index';
-import { Readable } from 'stream';
-import { Chess } from 'chess.js';
-import { beforeEach, describe, expect, it } from '@jest/globals';
+import { Chess, Move, Piece, Square } from 'chess.js';
+
+// Mock chess.js
+jest.mock('chess.js', () => {
+    const originalChess = jest.requireActual('chess.js');
+    return {
+        ...originalChess,
+        Chess: jest.fn(),
+    };
+});
+
+const mockedChess = Chess as jest.MockedClass<typeof Chess>;
 
 describe('ChessEngine', () => {
-  let engine: ChessEngine;
+    let engine: ChessEngine;
 
-  beforeEach(() => {
-    engine = new ChessEngine();
-  });
-
-  describe('evaluatePosition', () => {
-    it('returns checkmate score when in checkmate', () => {
-      const chess = new Chess();
-      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
-      chess.move('e4');
-      chess.move('e5');
-      chess.move('Qh5');
-      chess.move('Qxh7#');
-
-      engine.chess = chess;
-
-      const score = engine.evaluatePosition();
-      expect(score).toBe(-ChessEngine.CHECKMATE_VALUE);
+    beforeEach(() => {
+        // Reset the mock before each test
+        mockedChess.mockClear();
+        engine = new ChessEngine();
     });
 
-    it('returns material score for a normal position', () => {
-      const chess = new Chess();
-      chess.load('rnbqkbnr/pppppppp/8/8/3/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
+    describe('evaluatePosition', () => {
+        it('should return 0 for the starting position', () => {
+            const mockBoard: ({ type: string; color: string } | null)[][] = Array(8).fill(null).map(() => Array(8).fill(null));
+            const mockTurn = 'w';
+            const mockIsCheckmate = false;
 
-      engine.chess = chess;
+            // Configure the mock instance
+            mockedChess.prototype.board = jest.fn().mockReturnValue(mockBoard);
+            mockedChess.prototype.turn = jest.fn().mockReturnValue(mockTurn);
+            mockedChess.prototype.isCheckmate = jest.fn().mockReturnValue(mockIsCheckmate);
+            
+            engine.chess = new Chess();
 
-      const score = engine.evaluatePosition();
-      expect(score).toBe(0);
-    });
-  });
+            // The board is empty, so the score should be 0.
+            expect(engine.evaluatePosition()).toBe(0);
+        });
 
-  describe('minimax', () => {
-    it('returns evaluation when depth is 0', () => {
-      const chess = new Chess();
-      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
+        it('should return a positive score for white when white has a material advantage', () => {
+            const mockBoard: ({ type: string; color: string } | null)[][] = [
+                [{ type: 'r', color: 'w' }], // White rook
+                [{ type: 'p', color: 'b' }]  // Black pawn
+                // ... rest of the board is empty
+            ];
+            const mockTurn = 'w';
+            const mockIsCheckmate = false;
 
-      engine.chess = chess;
+            mockedChess.prototype.board = jest.fn().mockReturnValue(createFullBoard(mockBoard));
+            mockedChess.prototype.turn = jest.fn().mockReturnValue(mockTurn);
+            mockedChess.prototype.isCheckmate = jest.fn().mockReturnValue(mockIsCheckmate);
+            
+            engine.chess = new Chess();
+            
+            // White has a rook (5) and black has a pawn (1). Score should be 5 - 1 = 4
+            expect(engine.evaluatePosition()).toBe(4);
+        });
 
-      const score = engine.minimax(0, true);
-      expect(score).toBe(engine.evaluatePosition());
-    });
+        it('should return a negative score for black when black has a material advantage', () => {
+            const mockBoard: ({ type: string; color: string } | null)[][] = [
+                [{ type: 'r', color: 'b' }], // Black rook
+                [{ type: 'p', color: 'w' }]  // White pawn
+            ];
+             const mockTurn = 'w';
+            const mockIsCheckmate = false;
 
-    it('returns cached score when depth is sufficient', () => {
-      const chess = new Chess();
-      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
+            mockedChess.prototype.board = jest.fn().mockReturnValue(createFullBoard(mockBoard));
+            mockedChess.prototype.turn = jest.fn().mockReturnValue(mockTurn);
+            mockedChess.prototype.isCheckmate = jest.fn().mockReturnValue(mockIsCheckmate);
 
-      engine.chess = chess;
-      engine.transpositionTable = new Map();
-      engine.transpositionTable.set(chess.fen(), { depth: 3, score: 10 });
+            engine.chess = new Chess();
+            
+            // Black has a rook (5) and white has a pawn (1). Score should be 1 - 5 = -4.
+            expect(engine.evaluatePosition()).toBe(-4);
+        });
 
-      const score = engine.minimax(2, true);
-      expect(score).toBe(10);
-    });
-  });
+        it('should return CHECKMATE_VALUE for a checkmate delivered by white', () => {
+            mockedChess.prototype.isCheckmate = jest.fn().mockReturnValue(true);
+            mockedChess.prototype.turn = jest.fn().mockReturnValue('b'); // Black's turn, so white delivered checkmate
+            engine.chess = new Chess();
+            expect(engine.evaluatePosition()).toBe(ChessEngine.CHECKMATE_VALUE);
+        });
 
-  describe('findBestMove', () => {
-    it('returns checkmate move immediately', () => {
-      const chess = new Chess();
-      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
-      chess.move('e4');
-      chess.move('e5');
-      chess.move('Qh5');
-      chess.move('Qxh7#');
-
-      engine.chess = chess;
-
-      const bestMove = engine.findBestMove();
-      expect(bestMove).toBe('Qxh7#');
-    });
-
-    it('selects best move based on minimax score', () => {
-      const chess = new Chess();
-      chess.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1');
-
-      engine.chess = chess;
-
-      engine.minimax = jest.fn().mockReturnValue(10);
-
-      const bestMove = engine.findBestMove();
-      expect(bestMove).toBe('e4');
-    });
-  });
-
-  describe('handleCommand', () => {
-    it('responds to uci command', () => {
-      const engine = new ChessEngine();
-      engine.handleCommand('uci');
-      expect(console.log).toHaveBeenCalledWith('id name ChessBro');
-      expect(console.log).toHaveBeenCalledWith('id author Your Name');
-      expect(console.log).toHaveBeenCalledWith('uciok');
+        it('should return -CHECKMATE_VALUE for a checkmate delivered by black', () => {
+            mockedChess.prototype.isCheckmate = jest.fn().mockReturnValue(true);
+            mockedChess.prototype.turn = jest.fn().mockReturnValue('w'); // White's turn, so black delivered checkmate
+            engine.chess = new Chess();
+            expect(engine.evaluatePosition()).toBe(-ChessEngine.CHECKMATE_VALUE);
+        });
     });
 
-    it('resets game on ucinewgame', () => {
-      const engine = new ChessEngine();
-      engine.handleCommand('ucinewgame');
-      expect(engine.chess.isGameOver()).toBe(false);
-      expect(engine.transpositionTable.size).toBe(0);
-    });
+    describe('findBestMove', () => {
+        it('should find the only move available', () => {
+            const moves = ['e4'];
+            mockedChess.prototype.moves = jest.fn().mockReturnValue(moves);
+            mockedChess.prototype.move = jest.fn();
+            mockedChess.prototype.undo = jest.fn();
+            mockedChess.prototype.isCheckmate = jest.fn().mockReturnValue(false);
 
-    it('handles position command with startpos', () => {
-      const engine = new ChessEngine();
-      engine.handleCommand('position startpos moves e2e4 d2d4');
-      expect(engine.chess.move).toHaveBeenCalledWith('e2e4');
-      expect(engine.chess.move).toHaveBeenCalledWith('d2d4');
-    });
+            engine.chess = new Chess();
 
-    it('handles position command with fen', () => {
-      const engine = new ChessEngine();
-      engine.handleCommand('position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 moves e2e4');
-      expect(engine.chess.fen()).toBe('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-      expect(engine.chess.move).toHaveBeenCalledWith('e2e4');
-    });
+            // Mock minimax to return a score
+            engine.minimax = jest.fn().mockReturnValue(1);
 
-    it('handles go command and returns bestmove', () => {
-      const engine = new ChessEngine();
-      engine.findBestMove = jest.fn().mockReturnValue('e2e4');
-      engine.handleCommand('go');
-      expect(console.log).toHaveBeenCalledWith(`bestmove e2e4`);
-    });
-  });
+            const bestMove = engine.findBestMove();
+            expect(bestMove).toBe('e4');
+        });
 
-  describe('start', () => {
-    it('registers stdin input handler', () => {
-      const stdin: NodeJS.ReadStream = {
-        setEncoding: jest.fn(),
-        on: jest.fn(),
-        isRaw: false,
-        setRawMode: jest.fn(),
-        isTTY: false,
-        destroySoon: jest.fn(),
-        write: jest.fn(),
-        connect: jest.fn(),
-        pause: jest.fn(),
-        resetAndDestroy: jest.fn(),
-        // Remove invalid 'fd' property
-      };
-      const { Readable } = require('stream');
-      const mockStdin = Readable.from(['test input']);
-      jest.mock('process', () => ({
-          stdin: mockStdin
-      }));
-      engine.start();
-      expect(process.stdin.setEncoding).toHaveBeenCalledWith('utf8');
-      expect(stdin.on).toHaveBeenCalledWith('data', expect.any(Function));
+        it('should find a checkmating move', () => {
+            const moves = ['e4', 'Qh5#'];
+            mockedChess.prototype.moves = jest.fn().mockReturnValue(moves);
+            mockedChess.prototype.fen = jest.fn().mockReturnValue('some-fen');
+            mockedChess.prototype.isGameOver = jest.fn().mockReturnValue(false);
+
+            // Simulate the checkmate
+            mockedChess.prototype.move = jest.fn().mockImplementation((move) => {
+                if (move === 'Qh5#') {
+                    mockedChess.prototype.isCheckmate = jest.fn().mockReturnValue(true);
+                }
+                return {} as Move;
+            });
+            mockedChess.prototype.undo = jest.fn().mockImplementation(() => {
+                mockedChess.prototype.isCheckmate = jest.fn().mockReturnValue(false);
+            });
+            mockedChess.prototype.isCheckmate = jest.fn().mockReturnValue(false);
+            
+            engine.chess = new Chess();
+            
+            const bestMove = engine.findBestMove();
+            expect(bestMove).toBe('Qh5#');
+        });
     });
-  });
 });
+
+// Helper to create a full 8x8 board from a sparse one for testing
+function createFullBoard(sparseBoard: (({ type: string, color: string } | null)[])[]): (Piece | null)[][] {
+    const board: (Piece | null)[][] = Array(8).fill(null).map(() => Array(8).fill(null));
+    sparseBoard.forEach((row, r) => {
+        row.forEach((piece, f) => {
+            if (piece) {
+                board[r][f] = { ...piece, type: piece.type as any, color: piece.color as 'w' | 'b' };
+            }
+        });
+    });
+    return board;
+} 

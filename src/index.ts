@@ -193,6 +193,3 @@ export class ChessEngine {
         });
     }
 }
-
-const engine = new ChessEngine();
-engine.start();
