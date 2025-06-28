@@ -6,9 +6,10 @@ export interface TranspositionEntry {
 }
 
 export class ChessEngine {
-  private chess: Chess;
+  protected chess: Chess;
   public isRunning: boolean;
-  private transpositionTable: Map<string, TranspositionEntry>;
+  protected transpositionTable: Map<string, TranspositionEntry>;
+  protected searchDepth: number; // in full moves (prediction levels)
 
   // Piece values
   private static readonly PIECE_VALUES: { [key: string]: number } = {
@@ -27,13 +28,18 @@ export class ChessEngine {
     this.chess = new Chess();
     this.isRunning = true;
     this.transpositionTable = new Map();
+    this.searchDepth = 2; // Default: 2 full moves (4 plies)
   }
 
-  private evaluatePosition(): number {
+  protected evaluatePosition(): number {
     if (this.chess.isCheckmate()) {
       return this.chess.turn() === "w"
         ? -ChessEngine.CHECKMATE_VALUE
         : ChessEngine.CHECKMATE_VALUE;
+    }
+    if (this.chess.isStalemate()) {
+      // Stalemate is a draw, which is better than losing
+      return 0;
     }
     let score = 0;
     const board = this.chess.board();
@@ -49,7 +55,19 @@ export class ChessEngine {
     return score;
   }
 
-  private minimax(depth: number, isMaximizing: boolean): number {
+  /**
+   * Alpha-beta pruning minimax.
+   * @param depth Remaining plies (half-moves)
+   * @param isMaximizing True if maximizing player
+   * @param alpha Alpha value
+   * @param beta Beta value
+   */
+  protected minimax(
+    depth: number,
+    isMaximizing: boolean,
+    alpha: number,
+    beta: number,
+  ): number {
     const fen = this.chess.fen();
     const cachedEntry = this.transpositionTable.get(fen);
     if (cachedEntry && cachedEntry.depth >= depth) {
@@ -65,9 +83,13 @@ export class ChessEngine {
       let maxScore = -Infinity;
       for (const move of moves) {
         this.chess.move(move);
-        const score = this.minimax(depth - 1, false);
+        const score = this.minimax(depth - 1, false, alpha, beta);
         this.chess.undo();
         maxScore = Math.max(maxScore, score);
+        alpha = Math.max(alpha, score);
+        if (beta <= alpha) {
+          break; // Beta cut-off
+        }
       }
       this.transpositionTable.set(fen, { depth, score: maxScore });
       return maxScore;
@@ -75,9 +97,13 @@ export class ChessEngine {
       let minScore = Infinity;
       for (const move of moves) {
         this.chess.move(move);
-        const score = this.minimax(depth - 1, true);
+        const score = this.minimax(depth - 1, true, alpha, beta);
         this.chess.undo();
         minScore = Math.min(minScore, score);
+        beta = Math.min(beta, score);
+        if (beta <= alpha) {
+          break; // Alpha cut-off
+        }
       }
       this.transpositionTable.set(fen, { depth, score: minScore });
       return minScore;
@@ -89,13 +115,15 @@ export class ChessEngine {
     const currentMoves = this.chess.moves();
     let bestScore = -Infinity;
     let bestMove = currentMoves[0];
+    // Convert full-move searchDepth to plies (half-moves)
+    const plies = this.searchDepth * 2;
     for (const move of currentMoves) {
       this.chess.move(move);
       if (this.chess.isCheckmate()) {
         this.chess.undo();
         return move;
       }
-      const score = this.minimax(2, false);
+      const score = this.minimax(plies - 1, false, -Infinity, Infinity);
       this.chess.undo();
       if (score > bestScore) {
         bestScore = score;
@@ -151,6 +179,29 @@ export class ChessEngine {
         break;
       case "quit":
         this.isRunning = false;
+        break;
+      case "setoption":
+        // UCI-style: setoption name SearchDepth value 3
+        if (
+          parts[1] === "name" &&
+          parts[2].toLowerCase() === "searchdepth" &&
+          parts[3] === "value" &&
+          !isNaN(Number(parts[4]))
+        ) {
+          const newDepth = parseInt(parts[4], 10);
+          if (newDepth > 0) {
+            this.searchDepth = newDepth;
+            console.log(
+              `info string Search depth set to ${newDepth} full moves (${newDepth * 2} plies)`,
+            );
+          } else {
+            console.log("info string Invalid search depth value");
+          }
+        } else {
+          console.log(
+            "info string Usage: setoption name SearchDepth value <number>",
+          );
+        }
         break;
     }
   }
