@@ -7,6 +7,7 @@ A simple UCI-compatible chess engine written in TypeScript.
 1. Make sure you have Node.js installed
 2. Clone this repository
 3. Install dependencies:
+
 ```bash
 npm install
 ```
@@ -14,6 +15,7 @@ npm install
 ## Building
 
 To build the engine:
+
 ```bash
 npm run build
 ```
@@ -30,7 +32,7 @@ npm run build
 ## Features
 
 - Implements the UCI protocol
-- Currently makes random valid moves
+- Selects moves using a basic evaluation function and minimax search
 - Ready for custom move evaluation implementation
 
 ## Development
@@ -38,6 +40,13 @@ npm run build
 The engine is written in TypeScript and uses the chess.js library for move validation and board representation. The main logic is in `src/index.ts`.
 
 To add your own move evaluation:
-1. Modify the `go` command handler in `src/index.ts`
-2. Implement your evaluation function
-3. Choose the best move based on your evaluation instead of random selection
+
+1. Modify the evaluation logic in `src/index.ts` (see `evaluatePosition` and `minimax`)
+2. Implement your own evaluation function or search logic
+3. The engine will use your evaluation to choose the best move
+
+## Contributing
+
+**Note for Windows users:**
+
+Husky pre-commit hooks require a POSIX shell (like Git Bash, included with Git for Windows). If you use PowerShell or CMD, pre-commit hooks may not run. To ensure hooks work, run `git commit` from a Git Bash terminal or configure your editor to use Git Bash as the default terminal.
